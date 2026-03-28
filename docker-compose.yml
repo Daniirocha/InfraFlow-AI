@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: infraflow
+      POSTGRES_PASSWORD: infraflow
+      POSTGRES_DB: infraflow
+    ports:
+      - '5432:5432'
+    volumes:
+      - infraflow_pg:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - infraflow_redis:/data
+
+volumes:
+  infraflow_pg:
+  infraflow_redis:

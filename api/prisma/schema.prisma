@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TECHNICIAN
+  VIEWER
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  IN_MAINTENANCE
+  INACTIVE
+  RETIRED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  IN_REVIEW
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  name         String
+  role         Role           @default(VIEWER)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  ticketsAssigned Ticket[]    @relation("AssignedTickets")
+  ticketsCreated  Ticket[]    @relation("CreatedTickets")
+  tasksAssigned   Task[]      @relation("AssignedTasks")
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Equipment {
+  id              String              @id @default(cuid())
+  patrimonyNumber String              @unique
+  name            String
+  type            String
+  status          EquipmentStatus
+  sector          String
+  location        String?
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  maintenances    MaintenanceRecord[]
+  tickets         Ticket[]
+  tasks           Task[]
+}
+
+model MaintenanceRecord {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  performedAt DateTime  @default(now())
+  performedBy String?
+  createdAt   DateTime  @default(now())
+}
+
+model Ticket {
+  id               String             @id @default(cuid())
+  title            String
+  description      String
+  status           TicketStatus       @default(OPEN)
+  priority         TicketPriority     @default(MEDIUM)
+  category         String?
+  estimatedMinutes Int?
+  equipmentId      String?
+  equipment        Equipment?         @relation(fields: [equipmentId], references: [id])
+  assigneeId       String?
+  assignee         User?              @relation("AssignedTickets", fields: [assigneeId], references: [id])
+  createdById      String
+  createdBy        User               @relation("CreatedTickets", fields: [createdById], references: [id])
+  attachments      TicketAttachment[]
+  tasks            Task[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model TicketAttachment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  fileName  String
+  filePath  String
+  mimeType  String?
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(PENDING)
+  dueDate     DateTime?
+  type        String
+  ticketId    String?
+  ticket      Ticket?      @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  equipmentId String?
+  equipment   Equipment?   @relation(fields: [equipmentId], references: [id])
+  assigneeId  String?
+  assignee    User?        @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  outgoingDeps TaskDependency[] @relation("TaskDependencyTask")
+  incomingDeps TaskDependency[] @relation("TaskDependencyDependsOn")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model TaskDependency {
+  id               String @id @default(cuid())
+  taskId           String
+  dependsOnTaskId  String
+  task             Task   @relation("TaskDependencyTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn        Task   @relation("TaskDependencyDependsOn", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?
+  read      Boolean  @default(false)
+  type      String
+  createdAt DateTime @default(now())
+}
