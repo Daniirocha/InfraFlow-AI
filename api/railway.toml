@@ -1,0 +1,10 @@
+# Opcional: Railway detecta o serviço com Root Directory = /api
+# Ajuste no painel se o build/start aqui divergir da sua conta.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm ci && npx prisma generate && npm run build"
+
+[deploy]
+startCommand = "npx prisma migrate deploy && npm run start:prod"
+restartPolicyType = "ON_FAILURE"

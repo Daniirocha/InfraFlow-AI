@@ -113,11 +113,11 @@ Abra **`http://localhost:3000`**.
 
 ---
 
-## Deploy (referência)
+## Deploy (produção)
 
-- **Frontend:** Vercel — `NEXT_PUBLIC_API_URL` apontando para a URL pública da API (incluindo `/api` se for o caso).
-- **Backend:** Railway / Render — `DATABASE_URL` do provedor; rode `npx prisma migrate deploy` no deploy.
-- **Banco:** Supabase / Railway Postgres / Neon, etc.
+Passo a passo completo (Postgres → API → Vercel, variáveis, CORS e checklist) está em **[`DEPLOY.md`](./DEPLOY.md)**.
+
+Resumo: banco gerenciado (Neon/Supabase/etc.) → API no **Railway** ou **Render** com `DATABASE_URL` + `JWT_ACCESS_SECRET` + `CORS_ORIGIN` → front na **Vercel** com `NEXT_PUBLIC_API_URL` = `https://seu-backend.../api`. Exemplo de env para o Next: [`web/.env.production.example`](./web/.env.production.example).
 
 ---
 
